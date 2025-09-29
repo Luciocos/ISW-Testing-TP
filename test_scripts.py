@@ -1,36 +1,48 @@
-#.     "Shipping Cost Calculator"
-#e-commerce application with a feature that calculates shipping costs based on the weight of a package and the destination zone. 
-
-# The Rules for the Shipping Cost Calculator:
-# Package Weight: The system accepts package weights between 0.1 kg and 20.0 kg.
-# Destination Zones: There are three shipping zones:
-#   Zone A: Urban areas
-#   Zone B: Rural areas
-#   Zone C: Remote areas
-# Shipping Costs: The cost is determined by a combination of weight and destination zone.
-
-
-# Fixed Cost: A flat rate of $2.00 is applied to every shipment, regardless of weight or destination. This fee covers basic handling and administrative costs.
-
-# Price per Gram: The base variable cost is $0.005 per gram. This rate is applied to the weight of the package before the zone-specific multiplier.
-
-# Zone Coefficients: These multipliers adjust the variable cost based on the shipping destination:
-#   Zone A (Urban): 1.0 (No additional cost)
-#   Zone B (Rural): 1.5 (50% increase over the base variable cost)
-#   Zone C (Remote): 2.0 (100% increase over the base variable cost)
-
+# test_scripts.py
+import pytest
 import pricing_calculator as pc
-import os
 
-os.system('clear')
+# ---------- Boundary Value Tests for Weight ----------
+@pytest.mark.parametrize("weight,expected", [
+    (0.09, False),      # below min
+    (0.1, 0.1),         # at min
+    (0.11, 0.11),       # just above min
+    (19.99, 19.99),     # just below max
+    (20.0, 20.0),       # at max
+    (20.1, False)       # above max
+])
+def test_check_weight_bva(weight, expected):
+    assert pc.check_weight(weight) == expected
 
-print("Bienvenido a la Calculadora de Costos de Envío \nEl peso aceptado de los paquetes es entre 0.1 kg y 20.0 kg \nLas zonas de envío son: Zona A (Áreas Urbanas), Zona B (Áreas Rurales), Zona C (Áreas Remotas)")  
+# ---------- Boundary Value Tests for Zone ----------
+@pytest.mark.parametrize("zone,expected", [
+    ("A", True),
+    ("B", True),
+    ("C", True),
+    ("a", True),   # lowercase
+    ("D", False),
+    ("", False),
+])
+def test_check_zone(zone, expected):
+    assert pc.check_zone(zone) == expected
 
-peso = input("Ingrese el peso del paquete en kg: ")
-zona = input("Ingrese la zona de destino: ")
+# ---------- Decision Table: Valid weights x valid zones ----------
+@pytest.mark.parametrize("weight,zone,expected_cost", [
+    # weight 0.1 kg in each zone
+    (0.1, "A", 2.00 + (0.1*1000*0.005*1.0)),  # Zone A
+    (0.1, "B", 2.00 + (0.1*1000*0.005*1.5)),  # Zone B
+    (0.1, "C", 2.00 + (0.1*1000*0.005*2.0)),  # Zone C
 
-if pc.check_weight(float(peso)) > 0 and pc.check_zone(zona) == True:
-    costo = pc.calculate_shipping_cost(float(peso), zona)
-    print(f"El costo de envío para un paquete de {peso} kg a la zona {zona.upper()} es: ${costo:.2f}")
-else:
-    print("Entrada inválida. Asegúrese de que el peso esté entre 0.1 kg y 20.0 kg y que la zona sea A, B o C.")
+    # weight 20.0 kg in each zone
+    (20.0, "A", 2.00 + (20.0*1000*0.005*1.0)),
+    (20.0, "B", 2.00 + (20.0*1000*0.005*1.5)),
+    (20.0, "C", 2.00 + (20.0*1000*0.005*2.0)),
+])
+def test_calculate_shipping_cost_decision(weight, zone, expected_cost):
+    assert pc.calculate_shipping_cost(weight, zone) == pytest.approx(expected_cost, rel=1e-6)
+
+# ---------- Decision Table: Invalid zone should raise ----------
+@pytest.mark.parametrize("zone", ["D", "Z", ""])
+def test_calculate_shipping_cost_invalid_zone(zone):
+    with pytest.raises(ValueError):
+        pc.calculate_shipping_cost(1.0, zone)
