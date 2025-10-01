@@ -6,7 +6,7 @@
 # Destination Zones: There are three shipping zones:
 #   Zone A: Urban areas
 #   Zone B: Rural areas
-#   Zone C: Remote areas
+#   Zone C: Remote areas2
 # Shipping Costs: The cost is determined by a combination of weight and destination zone.
 
 

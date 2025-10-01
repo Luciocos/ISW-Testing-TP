@@ -5,9 +5,9 @@ import pricing_calculator as pc
 # ---------- Boundary Value Tests for Weight ----------
 @pytest.mark.parametrize("weight,expected", [
     (0.09, False),      # below min
-    (0.1, 0.1),         # at min
+    (0.1, 9999),       # at min
     (0.11, 0.11),       # just above min
-    (19.99, 19.99),     # just below max
+    (19.99,30),     # just below max
     (20.0, 20.0),       # at max
     (20.1, False)       # above max
 ])
